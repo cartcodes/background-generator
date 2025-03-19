@@ -20,4 +20,21 @@ yarn-debug.log*
 yarn-error.log*
 
 # Dependencies
-node_modules/ 
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+build/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Debug logs
+debug.log
+
+# Electron specific
+.electron-builder.env 

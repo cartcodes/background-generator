@@ -1,0 +1,49 @@
+{
+  "name": "background-generator",
+  "version": "1.0.0",
+  "description": "An Electron-based application for creating beautiful, animated backgrounds for streaming and virtual meetings",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cartcodes/background-generator.git"
+  },
+  "keywords": [
+    "electron",
+    "streaming",
+    "background",
+    "generator",
+    "animation",
+    "virtual-camera"
+  ],
+  "author": "cartcodes",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cartcodes/background-generator/issues"
+  },
+  "homepage": "https://github.com/cartcodes/background-generator#readme",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "build": {
+    "appId": "com.cartcodes.backgroundgenerator",
+    "productName": "Background Generator",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
