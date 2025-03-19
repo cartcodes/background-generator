@@ -14,10 +14,6 @@ A web-based tool for generating beautiful animated backgrounds with dot grids, s
 - Responsive design
 - Dark mode UI
 
-## Live Demo
-
-Visit [https://cartcodes.github.io/background-generator/](https://cartcodes.github.io/background-generator/) to try the generator live.
-
 ## Usage
 
 1. Open the generator in your web browser
