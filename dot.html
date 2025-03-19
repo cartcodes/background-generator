@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Background Generator</title>
+    <style>
+        :root {
+            --main-bg-color: #1a1a1a;
+            --panel-bg-color: #2a2a2a;
+            --accent-color: #6d44d0;
+            --text-color: #e0e0e0;
+            --slider-track: #3a3a3a;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--main-bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        header {
+            background-color: var(--panel-bg-color);
+            padding: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 400;
+            color: var(--accent-color);
+        }
+        
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .controls {
+            width: 300px;
+            background-color: var(--panel-bg-color);
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+            z-index: 50;
+        }
+        
+        .preview-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        canvas {
+            border: 1px solid #444;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            background-color: #000;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #3a3a3a;
+            padding-bottom: 15px;
+        }
+        
+        .control-group:last-child {
+            border-bottom: none;
+        }
+        
+        .control-group h3 {
+            margin-bottom: 10px;
+            color: var(--accent-color);
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .form-group {
+            margin-bottom: 12px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 8px;
+            background-color: #333;
+            border: 1px solid #444;
+            color: var(--text-color);
+            border-radius: 4px;
+        }
+        
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 8px;
+            background: var(--slider-track);
+            border-radius: 4px;
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        input[type="color"] {
+            height: 35px;
+            background: transparent;
+        }
+        
+        .button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        
+        .button:hover {
+            background-color: #8055e8;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+        
+        #recordButton {
+            background-color: #d44444;
+        }
+        
+        #recordButton:hover {
+            background-color: #e85555;
+        }
+        
+        #recordButton.recording {
+            background-color: #44d444;
+        }
+        
+        .tab-container {
+            margin-bottom: 15px;
+        }
+        
+        .tabs {
+            display: flex;
+            background-color: #222;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 8px 0;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+        }
+        
+        .tab.active {
+            background-color: var(--accent-color);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .info-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .value-display {
+            background-color: #333;
+            padding: 3px 8px;
+            border-radius: 3px;
+            margin-left: 10px;
+            font-size: 12px;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .slider-with-value {
+            display: flex;
+            align-items: center;
+        }
+        
+        .slider-with-value input[type="range"] {
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .aspect-ratio-button {
+            display: inline-block;
+            padding: 6px 12px;
+            background-color: #333;
+            border: 1px solid #444;
+            border-radius: 4px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .aspect-ratio-button.active {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        
+        .gradient-stop {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            background-color: #333;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .gradient-stop input[type="color"] {
+            width: 40px;
+            height: 30px;
+            margin-right: 10px;
+        }
+        
+        .gradient-stop input[type="range"] {
+            flex: 1;
+            margin: 0 10px;
+        }
+        
+        .remove-stop {
+            background-color: #d44444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        #fps {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Stream Background Generator</h1>
+        <div class="button-group">
+            <button id="recordButton" class="button">Record (5s)</button>
+            <button id="exportButton" class="button">Download MP4</button>
+        </div>
+    </header>
+    
+    <div class="main-container">
+        <div class="controls">
+            <div class="control-group">
+                <h3>Base Settings</h3>
+                <div class="form-group">
+                    <label for="aspectRatio">Aspect Ratio</label>
+                    <div class="aspect-ratio-buttons">
+                        <div class="aspect-ratio-button active" data-width="1920" data-height="1080">16:9</div>
+                        <div class="aspect-ratio-button" data-width="1080" data-height="1920">9:16</div>
+                        <div class="aspect-ratio-button" data-width="1080" data-height="1080">1:1</div>
+                        <div class="aspect-ratio-button" data-width="1200" data-height="640">Twitter</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="animationSpeed">Animation Speed</label>
+                    <div class="slider-with-value">
+                        <input type="range" id="animationSpeed" min="0.1" max="5" step="0.1" value="1">
+                        <div class="value-display" id="animationSpeedValue">1</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-container">
+                <div class="tabs">
+                    <div class="tab active" data-tab="background">Background</div>
+                    <div class="tab" data-tab="dots">Dots</div>
+                    <div class="tab" data-tab="strings">Strings</div>
+                    <div class="tab" data-tab="particles">Particles</div>
+                </div>
+                
+                <div class="tab-content active" id="background-tab">
+                    <div class="control-group">
+                        <h3>Background Settings</h3>
+                        <div class="form-group">
+                            <label for="bgType">Background Type</label>
+                            <select id="bgType">
+                                <option value="solid">Solid Color</option>
+                                <option value="linear-gradient" selected>Linear Gradient</option>
+                                <option value="radial-gradient">Radial Gradient</option>
+                            </select>
+                        </div>
+                        
+                        <div id="solidColorSettings">
+                            <div class="form-group">
+                                <label for="solidColor">Color</label>
+                                <input type="color" id="solidColor" value="#000033">
+                            </div>
+                        </div>
+                        
+                        <div id="gradientSettings">
+                            <div class="form-group">
+                                <label for="gradientDirection">Direction (degrees)</label>
+                                <div class="slider-with-value">
+                                    <input type="range" id="gradientDirection" min="0" max="360" step="5" value="45">
+                                    <div class="value-display" id="gradientDirectionValue">45°</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Gradient Stops</label>
+                                <div id="gradientStopsContainer">
+                                    <div class="gradient-stop">
+                                        <input type="color" value="#000033" class="stop-color">
+                                        <input type="range" min="0" max="100" value="0" class="stop-position">
+                                        <div class="value-display">0%</div>
+                                    </div>
+                                    <div class="gradient-stop">
+                                        <input type="color" value="#3300cc" class="stop-color">
+                                        <input type="range" min="0" max="100" value="100" class="stop-position">
+                                        <div class="value-display">100%</div>
+                                        <button class="remove-stop">×</button>
+                                    </div>
+                                </div>
+                                <button id="addGradientStop" class="button" style="margin-top: 10px;">Add Stop</button>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="gradientAnimation">Animation Type</label>
+                                <select id="gradientAnimation">
+                                    <option value="none">None</option>
+                                    <option value="rotate" selected>Rotate</option>
+                                    <option value="shift">Shift Colors</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="dots-tab">
+                    <div class="control-group">
+                        <h3>Dot Grid Settings</h3>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="enableDots" checked>
+                                <label for="enableDots">Enable Dot Grid</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dotSize">Dot Size</label>
+                            <div class="slider-with-value">
+                                <input type="range" id="dotSize" min="1" max="10" value="2" step="0.5">
+                                <div class="value-display" id="dotSizeValue">2</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dotSpacing">Dot Spacing</label>
+                            <div class="slider-with-value">
+                                <input type="range" id="dotSpacing" min="10" max="100" value="40">
+                                <div class="value-display" id="dotSpacingValue">40</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dotColor">Dot Color</label>
+                            <input type="color" id="dotColor" value="#ffffff">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dotOpacity">Dot Opacity</label>
+                            <div class="slider-with-value">
+                                <input type="range" id="dotOpacity" min="0" max="1" step="0.1" value="0.5">
+                                <div class="value-display" id="dotOpacityValue">0.5</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="dotAnimation">Animation Type</label>
+                            <select id="dotAnimation">
+                                <option value="none">None</option>
+                                <option value="pulse" selected>Pulse</option>
+                                <option value="wave">Wave</option>
+                                <option value="sway">Sway</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="strings-tab">
+                    <div class="control-group">
+                        <h3>String Connection Settings</h3>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="enableStrings" checked>
+                                <label for="enableStrings">Enable String Connections</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="stringMaxDistance">Max Connection Distance</label>
+                            <div class="slider-with-value">
+                                <input type="range" id="stringMaxDistance" min="50" max="300" value="120">
+                                <div class="value-display" id="stringMaxDistanceValue">120</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="stringColor">String Color</label>
+                            <input type="color" id="stringColor" value="#4444ff">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="stringWidth">String Width</label>
+                            <div class="slider-with-value">
+                                <input type="range" id="stringWidth" min="0.5" max="5" step="0.5" value="1">
+                                <div class="value-display" id="stringWidthValue">1</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="stringOpacity">String Opacity</label>
+                            <div class="slider-with-value">
+                                <input type="range" id="stringOpacity" min="0" max="1" step="0.1" value="0.3">
+                                <div class="value-display" id="stringOpacityValue">0.3</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="particles-tab">
+                    <div class="control-group">
+                        <h3>Particle Settings</h3>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="enableParticles">
+                                <label for="enableParticles">Enable Floating Particles</label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="particleCount">Particle Count</label>
+                            <div class="slider-with-value">
+                                <input type="range" id="particleCount" min="5" max="100" value="20">
+                                <div class="value-display" id="particleCountValue">20</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="particleSize">Particle Size</label>
+                            <div class="slider-with-value">
+                                <input type="range" id="particleSize" min="1" max="10" value="3" step="0.5">
+                                <div class="value-display" id="particleSizeValue">3</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="particleColor">Particle Color</label>
+                            <input type="color" id="particleColor" value="#ffffff">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="particleOpacity">Particle Opacity</label>
+                            <div class="slider-with-value">
+                                <input type="range" id="particleOpacity" min="0" max="1" step="0.1" value="0.7">
+                                <div class="value-display" id="particleOpacityValue">0.7</div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="particleSpeed">Particle Speed</label>
+                            <div class="slider-with-value">
+                                <input type="range" id="particleSpeed" min="0.5" max="5" step="0.5" value="1">
+                                <div class="value-display" id="particleSpeedValue">1</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <button id="randomizeButton" class="button">Randomize All</button>
+                <button id="resetButton" class="button" style="margin-top: 10px;">Reset to Defaults</button>
+            </div>
+        </div>
+        
+        <div class="preview-container">
+            <canvas id="previewCanvas"></canvas>
+            <div id="fps">FPS: 0</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <script>
+        // Global variables
+        let canvas, ctx;
+        let width = 1920;
+        let height = 1080;
+        let isPlaying = true;
+        let isRecording = false;
+        let mediaRecorder;
+        let recordedChunks = [];
+        let dots = [];
+        let particles = [];
+        let lastTime = 0;
+        let fpsCounter = 0;
+        let fpsTime = 0;
+        let loopDuration = 5; // Loop every 5 seconds by default
+        let currentTime = 0;
+        let animationSpeed = 1;
+        
+        // Initialize canvas
+        function initCanvas() {
+            canvas = document.getElementById('previewCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // Set canvas size (scaled down for preview)
+            updateCanvasSize();
+            
+            // Initialize dots
+            initDots();
+            
+            // Initialize particles
+            initParticles();
+            
+            // Start animation loop
+            requestAnimationFrame(animate);
+        }
+        
+        function updateCanvasSize() {
+            // Scale down for preview
+            const containerWidth = document.querySelector('.preview-container').clientWidth - 40;
+            const containerHeight = document.querySelector('.preview-container').clientHeight - 40;
+            
+            let scale = Math.min(containerWidth / width, containerHeight / height);
+            
+            canvas.width = width * scale;
+            canvas.height = height * scale;
+            
+            // Set actual render size in attributes
+            canvas.style.width = canvas.width + 'px';
+            canvas.style.height = canvas.height + 'px';
+            
+            // Scale the context to ensure correct rendering
+            ctx.scale(scale, scale);
+        }
+        
+        // Initialize dots grid
+        function initDots() {
+            dots = [];
+            const spacing = parseInt(document.getElementById('dotSpacing').value);
+            
+            for (let x = 0; x <= width; x += spacing) {
+                for (let y = 0; y <= height; y += spacing) {
+                    dots.push({
+                        x: x,
+                        y: y,
+                        baseX: x,
+                        baseY: y,
+                        size: parseFloat(document.getElementById('dotSize').value),
+                        phase: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+        }
+        
+        // Initialize floating particles
+        function initParticles() {
+            particles = [];
+            if (!document.getElementById('enableParticles').checked) return;
+            
+            const count = parseInt(document.getElementById('particleCount').value);
+            
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: parseFloat(document.getElementById('particleSize').value),
+                    speedX: (Math.random() - 0.5) * parseFloat(document.getElementById('particleSpeed').value),
+                    speedY: (Math.random() - 0.5) * parseFloat(document.getElementById('particleSpeed').value),
+                    opacity: Math.random() * 0.5 + parseFloat(document.getElementById('particleOpacity').value) / 2
+                });
+            }
+        }
+        
+        // Main animation loop
+        function animate(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            const delta = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+            
+            // Calculate time in loop (0 to loopDuration)
+            currentTime += delta * animationSpeed;
+            if (currentTime >= loopDuration) {
+                currentTime = currentTime % loopDuration;
+            }
+            
+            // Calculate normalized time (0 to 1) for the loop
+            const t = currentTime / loopDuration;
+            
+            // Calculate FPS
+            fpsCounter++;
+            fpsTime += delta;
+            if (fpsTime >= 1) {
+                document.getElementById('fps').textContent = `FPS: ${Math.round(fpsCounter / fpsTime)}`;
+                fpsCounter = 0;
+                fpsTime = 0;
+            }
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw background
+            drawBackground(t);
+            
+            // Update and draw dots
+            if (document.getElementById('enableDots').checked) {
+                updateDots(t);
+                drawDots();
+            }
+            
+            // Draw strings between dots
+            if (document.getElementById('enableStrings').checked) {
+                drawStrings();
+            }
+            
+            // Update and draw particles
+            if (document.getElementById('enableParticles').checked) {
+                updateParticles(delta);
+                drawParticles();
+            }
+            
+            // Continue animation loop
+            if (isPlaying) {
+                requestAnimationFrame(animate);
+            }
+        }
+        
+        // Draw background
+        function drawBackground(t) {
+            const bgType = document.getElementById('bgType').value;
+            
+            if (bgType === 'solid') {
+                // Solid color background
+                ctx.fillStyle = document.getElementById('solidColor').value;
+                ctx.fillRect(0, 0, width, height);
+            } else {
+                // Create gradient
+                let gradient;
+                const stops = getGradientStops();
+                
+                if (bgType === 'linear-gradient') {
+                    let angle = parseInt(document.getElementById('gradientDirection').value);
+                    
+                    // Apply animation if enabled
+                    const gradientAnimation = document.getElementById('gradientAnimation').value;
+                    if (gradientAnimation === 'rotate') {
+                        angle = (angle + 360 * t) % 360;
+                    }
+                    
+                    // Convert angle to radians
+                    const radians = (angle * Math.PI) / 180;
+                    
+                    // Calculate gradient start and end points
+                    const centerX = width / 2;
+                    const centerY = height / 2;
+                    const radius = Math.max(width, height);
+                    
+                    const startX = centerX - Math.cos(radians) * radius;
+                    const startY = centerY - Math.sin(radians) * radius;
+                    const endX = centerX + Math.cos(radians) * radius;
+                    const endY = centerY + Math.sin(radians) * radius;
+                    
+                    gradient = ctx.createLinearGradient(startX, startY, endX, endY);
+                } else {
+                    // Radial gradient
+                    gradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) / 2);
+                }
+                
+                // Apply gradient stops
+                if (document.getElementById('gradientAnimation').value === 'shift' && bgType === 'linear-gradient') {
+                    // Shift colors animation
+                    for (const stop of stops) {
+                        let position = stop.position / 100;
+                        position = (position + t) % 1;
+                        gradient.addColorStop(position, stop.color);
+                    }
+                } else {
+                    // Normal gradient stops
+                    for (const stop of stops) {
+                        gradient.addColorStop(stop.position / 100, stop.color);
+                    }
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+            }
+        }
+        
+        // Get gradient stops from UI
+        function getGradientStops() {
+            const stops = [];
+            const stopElements = document.querySelectorAll('.gradient-stop');
+            
+            stopElements.forEach(element => {
+                stops.push({
+                    color: element.querySelector('.stop-color').value,
+                    position: parseInt(element.querySelector('.stop-position').value)
+                });
+            });
+            
+            // Sort by position
+            stops.sort((a, b) => a.position - b.position);
+            
+            return stops;
+        }
+        
+        // Update dots positions based on animation
+        function updateDots(t) {
+            const animation = document.getElementById('dotAnimation').value;
+            
+            dots.forEach(dot => {
+                // Reset to base position
+                dot.x = dot.baseX;
+                dot.y = dot.baseY;
+                
+                if (animation === 'pulse') {
+                    // Pulse animation
+                    dot.size = parseFloat(document.getElementById('dotSize').value) * (1 + 0.3 * Math.sin(dot.phase + t * Math.PI * 2));
+                } else if (animation === 'wave') {
+                    // Wave animation
+                    dot.y = dot.baseY + Math.sin(dot.phase + t * Math.PI * 2 + dot.baseX * 0.01) * 10;
+                } else if (animation === 'sway') {
+                    // Sway animation
+                    dot.x = dot.baseX + Math.sin(dot.phase + t * Math.PI * 2) * 10;
+                    dot.y = dot.baseY + Math.cos(dot.phase + t * Math.PI * 2) * 10;
+                }
+            });
+        }
+        
+        // Draw dots
+        function drawDots() {
+            const size = parseFloat(document.getElementById('dotSize').value);
+            const color = document.getElementById('dotColor').value;
+            const opacity = parseFloat(document.getElementById('dotOpacity').value);
+            
+            ctx.fillStyle = color;
+            ctx.globalAlpha = opacity;
+            
+            dots.forEach(dot => {
+                ctx.beginPath();
+                ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Reset global alpha
+            ctx.globalAlpha = 1.0;
+        }
+        
+        // Draw strings between close dots
+        function drawStrings() {
+            const maxDistance = parseInt(document.getElementById('stringMaxDistance').value);
+            const color = document.getElementById('stringColor').value;
+            const width = parseFloat(document.getElementById('stringWidth').value);
+            const opacity = parseFloat(document.getElementById('stringOpacity').value);
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = width;
+            ctx.globalAlpha = opacity;
+            
+            for (let i = 0; i < dots.length; i++) {
+                for (let j = i + 1; j < dots.length; j++) {
+                    const dot1 = dots[i];
+                    const dot2 = dots[j];
+                    
+                    const dx = dot2.x - dot1.x;
+                    const dy = dot2.y - dot1.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < maxDistance) {
+                        // Fade out strings as they get further apart
+                        ctx.globalAlpha = opacity * (1 - distance / maxDistance);
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(dot1.x, dot1.y);
+                        ctx.lineTo(dot2.x, dot2.y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            // Reset global alpha
+            ctx.globalAlpha = 1.0;
+        }
+        
+        // Update particle positions
+        function updateParticles(delta) {
+            particles.forEach(particle => {
+                // Move particle
+                particle.x += particle.speedX * delta * 60;
+                particle.y += particle.speedY * delta * 60;
+                
+                // Wrap around edges
+                if (particle.x < 0) particle.x = width;
+                if (particle.x > width) particle.x = 0;
+                if (particle.y < 0) particle.y = height;
+                if (particle.y > height) particle.y = 0;
+            });
+        }
+        
+        // Draw particles
+        function drawParticles() {
+            const color = document.getElementById('particleColor').value;
+            
+            particles.forEach(particle => {
+                ctx.fillStyle = color;
+                ctx.globalAlpha = particle.opacity;
+                
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            // Reset global alpha
+            ctx.globalAlpha = 1.0;
+        }
+        
+        // Set up UI events
+        function setupUIEvents() {
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Deactivate all tabs
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // Activate selected tab
+                    tab.classList.add('active');
+                    document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+                });
+            });
+            
+            // Background type selection
+            document.getElementById('bgType').addEventListener('change', e => {
+                const type = e.target.value;
+                if (type === 'solid') {
+                    document.getElementById('solidColorSettings').style.display = 'block';
+                    document.getElementById('gradientSettings').style.display = 'none';
+                } else {
+                    document.getElementById('solidColorSettings').style.display = 'none';
+                    document.getElementById('gradientSettings').style.display = 'block';
+                }
+            });
+            
+            // Initialize background type display
+            const bgType = document.getElementById('bgType').value;
+            if (bgType === 'solid') {
+                document.getElementById('solidColorSettings').style.display = 'block';
+                document.getElementById('gradientSettings').style.display = 'none';
+            } else {
+                document.getElementById('solidColorSettings').style.display = 'none';
+                document.getElementById('gradientSettings').style.display = 'block';
+            }
+            
+            // Add gradient stop
+            document.getElementById('addGradientStop').addEventListener('click', () => {
+                const container = document.getElementById('gradientStopsContainer');
+                const newStop = document.createElement('div');
+                newStop.className = 'gradient-stop';
+                
+                // Generate a random color
+                const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+                
+                // Find an appropriate position between existing stops
+                const stopElements = document.querySelectorAll('.gradient-stop');
+                const positions = Array.from(stopElements).map(el => 
+                    parseInt(el.querySelector('.stop-position').value)
+                ).sort((a, b) => a - b);
+                
+                let newPosition = 50; // Default middle
+                if (positions.length >= 2) {
+                    // Find largest gap between existing stops
+                    let maxGap = 0;
+                    let gapStart = 0;
+                    
+                    for (let i = 0; i < positions.length - 1; i++) {
+                        const gap = positions[i+1] - positions[i];
+                        if (gap > maxGap) {
+                            maxGap = gap;
+                            gapStart = positions[i];
+                        }
+                    }
+                    
+                    // Place new stop in the middle of largest gap
+                    newPosition = gapStart + Math.round(maxGap / 2);
+                }
+                
+                newStop.innerHTML = `
+                    <input type="color" value="${randomColor}" class="stop-color">
+                    <input type="range" min="0" max="100" value="${newPosition}" class="stop-position">
+                    <div class="value-display">${newPosition}%</div>
+                    <button class="remove-stop">×</button>
+                `;
+                
+                container.appendChild(newStop);
+                
+                // Add event listeners to new elements
+                setupGradientStopEvents(newStop);
+            });
+            
+            // Setup existing gradient stop events
+            document.querySelectorAll('.gradient-stop').forEach(stop => {
+                setupGradientStopEvents(stop);
+            });
+            
+            // Aspect ratio buttons
+            document.querySelectorAll('.aspect-ratio-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    // Deactivate all buttons
+                    document.querySelectorAll('.aspect-ratio-button').forEach(b => b.classList.remove('active'));
+                    
+                    // Activate selected button
+                    button.classList.add('active');
+                    
+                    // Update canvas size
+                    width = parseInt(button.dataset.width);
+                    height = parseInt(button.dataset.height);
+                    
+                    updateCanvasSize();
+                    initDots();
+                    initParticles();
+                });
+            });
+            
+            // Animation speed
+            document.getElementById('animationSpeed').addEventListener('input', e => {
+                animationSpeed = parseFloat(e.target.value);
+                document.getElementById('animationSpeedValue').textContent = animationSpeed.toFixed(1);
+            });
+            
+            // Dot settings
+            document.getElementById('dotSize').addEventListener('input', e => {
+                document.getElementById('dotSizeValue').textContent = e.target.value;
+            });
+            
+            document.getElementById('dotSpacing').addEventListener('input', e => {
+                document.getElementById('dotSpacingValue').textContent = e.target.value;
+                initDots();
+            });
+            
+            document.getElementById('dotOpacity').addEventListener('input', e => {
+                document.getElementById('dotOpacityValue').textContent = e.target.value;
+            });
+            
+            // Enable/disable dots
+            document.getElementById('enableDots').addEventListener('change', e => {
+                if (e.target.checked && dots.length === 0) {
+                    initDots();
+                }
+            });
+            
+            // String settings
+            document.getElementById('stringMaxDistance').addEventListener('input', e => {
+                document.getElementById('stringMaxDistanceValue').textContent = e.target.value;
+            });
+            
+            document.getElementById('stringWidth').addEventListener('input', e => {
+                document.getElementById('stringWidthValue').textContent = e.target.value;
+            });
+            
+            document.getElementById('stringOpacity').addEventListener('input', e => {
+                document.getElementById('stringOpacityValue').textContent = e.target.value;
+            });
+            
+            // Particle settings
+            document.getElementById('particleCount').addEventListener('input', e => {
+                document.getElementById('particleCountValue').textContent = e.target.value;
+                initParticles();
+            });
+            
+            document.getElementById('particleSize').addEventListener('input', e => {
+                document.getElementById('particleSizeValue').textContent = e.target.value;
+            });
+            
+            document.getElementById('particleOpacity').addEventListener('input', e => {
+                document.getElementById('particleOpacityValue').textContent = e.target.value;
+            });
+            
+            document.getElementById('particleSpeed').addEventListener('input', e => {
+                document.getElementById('particleSpeedValue').textContent = e.target.value;
+                initParticles();
+            });
+            
+            // Enable/disable particles
+            document.getElementById('enableParticles').addEventListener('change', e => {
+                if (e.target.checked && particles.length === 0) {
+                    initParticles();
+                }
+            });
+            
+            // Gradient direction
+            document.getElementById('gradientDirection').addEventListener('input', e => {
+                document.getElementById('gradientDirectionValue').textContent = `${e.target.value}°`;
+            });
+            
+            // Randomize button
+            document.getElementById('randomizeButton').addEventListener('click', randomizeSettings);
+            
+            // Reset button
+            document.getElementById('resetButton').addEventListener('click', resetSettings);
+            
+            // Record video
+            document.getElementById('recordButton').addEventListener('click', toggleRecording);
+            
+            // Export video
+            document.getElementById('exportButton').addEventListener('click', exportVideo);
+            
+            // Handle window resize
+            window.addEventListener('resize', updateCanvasSize);
+        }
+        
+        // Set up gradient stop events
+        function setupGradientStopEvents(stopElement) {
+            const positionSlider = stopElement.querySelector('.stop-position');
+            const valueDisplay = stopElement.querySelector('.value-display');
+            const removeButton = stopElement.querySelector('.remove-stop');
+            
+            // Update position display
+            positionSlider.addEventListener('input', () => {
+                valueDisplay.textContent = `${positionSlider.value}%`;
+            });
+            
+            // Remove stop button
+            if (removeButton) {
+                removeButton.addEventListener('click', () => {
+                    const stops = document.querySelectorAll('.gradient-stop');
+                    if (stops.length > 2) {
+                        stopElement.remove();
+                    } else {
+                        alert('You must have at least 2 gradient stops.');
+                    }
+                });
+            }
+        }
+        
+        // Randomize settings
+        function randomizeSettings() {
+            function randomColor() {
+                return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+            }
+            
+            // Background settings
+            document.getElementById('bgType').value = ['linear-gradient', 'radial-gradient'][Math.floor(Math.random() * 2)];
+            document.getElementById('solidColor').value = randomColor();
+            document.getElementById('gradientDirection').value = Math.floor(Math.random() * 360);
+            document.getElementById('gradientDirectionValue').textContent = `${document.getElementById('gradientDirection').value}°`;
+            document.getElementById('gradientAnimation').value = ['none', 'rotate', 'shift'][Math.floor(Math.random() * 3)];
+            
+            // Randomize gradient stops
+            const container = document.getElementById('gradientStopsContainer');
+            container.innerHTML = '';
+            
+            const numStops = Math.floor(Math.random() * 3) + 2; // 2 to 4 stops
+            
+            for (let i = 0; i < numStops; i++) {
+                const position = i === 0 ? 0 : (i === numStops - 1 ? 100 : Math.floor(Math.random() * 80) + 10);
+                const newStop = document.createElement('div');
+                newStop.className = 'gradient-stop';
+                
+                newStop.innerHTML = `
+                    <input type="color" value="${randomColor()}" class="stop-color">
+                    <input type="range" min="0" max="100" value="${position}" class="stop-position">
+                    <div class="value-display">${position}%</div>
+                    ${i > 0 && i < numStops - 1 ? '<button class="remove-stop">×</button>' : ''}
+                `;
+                
+                container.appendChild(newStop);
+                setupGradientStopEvents(newStop);
+            }
+            
+            // Dot settings
+            document.getElementById('enableDots').checked = Math.random() > 0.2;
+            document.getElementById('dotSize').value = Math.random() * 5 + 1;
+            document.getElementById('dotSizeValue').textContent = document.getElementById('dotSize').value;
+            document.getElementById('dotSpacing').value = Math.floor(Math.random() * 50) + 20;
+            document.getElementById('dotSpacingValue').textContent = document.getElementById('dotSpacing').value;
+            document.getElementById('dotColor').value = randomColor();
+            document.getElementById('dotOpacity').value = (Math.random() * 0.8 + 0.2).toFixed(1);
+            document.getElementById('dotOpacityValue').textContent = document.getElementById('dotOpacity').value;
+            document.getElementById('dotAnimation').value = ['none', 'pulse', 'wave', 'sway'][Math.floor(Math.random() * 4)];
+            
+            // String settings
+            document.getElementById('enableStrings').checked = Math.random() > 0.2;
+            document.getElementById('stringMaxDistance').value = Math.floor(Math.random() * 150) + 50;
+            document.getElementById('stringMaxDistanceValue').textContent = document.getElementById('stringMaxDistance').value;
+            document.getElementById('stringColor').value = randomColor();
+            document.getElementById('stringWidth').value = (Math.random() * 3 + 0.5).toFixed(1);
+            document.getElementById('stringWidthValue').textContent = document.getElementById('stringWidth').value;
+            document.getElementById('stringOpacity').value = (Math.random() * 0.5 + 0.1).toFixed(1);
+            document.getElementById('stringOpacityValue').textContent = document.getElementById('stringOpacity').value;
+            
+            // Particle settings
+            document.getElementById('enableParticles').checked = Math.random() > 0.5;
+            document.getElementById('particleCount').value = Math.floor(Math.random() * 50) + 10;
+            document.getElementById('particleCountValue').textContent = document.getElementById('particleCount').value;
+            document.getElementById('particleSize').value = (Math.random() * 5 + 1).toFixed(1);
+            document.getElementById('particleSizeValue').textContent = document.getElementById('particleSize').value;
+            document.getElementById('particleColor').value = randomColor();
+            document.getElementById('particleOpacity').value = (Math.random() * 0.8 + 0.2).toFixed(1);
+            document.getElementById('particleOpacityValue').textContent = document.getElementById('particleOpacity').value;
+            document.getElementById('particleSpeed').value = (Math.random() * 3 + 0.5).toFixed(1);
+            document.getElementById('particleSpeedValue').textContent = document.getElementById('particleSpeed').value;
+            
+            // Speed
+            document.getElementById('animationSpeed').value = (Math.random() * 2 + 0.5).toFixed(1);
+            document.getElementById('animationSpeedValue').textContent = document.getElementById('animationSpeed').value;
+            animationSpeed = parseFloat(document.getElementById('animationSpeed').value);
+            
+            // Trigger UI updates
+            const bgTypeEvent = new Event('change');
+            document.getElementById('bgType').dispatchEvent(bgTypeEvent);
+            
+            // Reinitialize
+            initDots();
+            initParticles();
+        }
+        
+        // Reset to default settings
+        function resetSettings() {
+            // Reset to defaults
+            document.getElementById('bgType').value = 'linear-gradient';
+            document.getElementById('solidColor').value = '#000033';
+            document.getElementById('gradientDirection').value = 45;
+            document.getElementById('gradientDirectionValue').textContent = '45°';
+            document.getElementById('gradientAnimation').value = 'rotate';
+            
+            // Reset gradient stops
+            const container = document.getElementById('gradientStopsContainer');
+            container.innerHTML = `
+                <div class="gradient-stop">
+                    <input type="color" value="#000033" class="stop-color">
+                    <input type="range" min="0" max="100" value="0" class="stop-position">
+                    <div class="value-display">0%</div>
+                </div>
+                <div class="gradient-stop">
+                    <input type="color" value="#3300cc" class="stop-color">
+                    <input type="range" min="0" max="100" value="100" class="stop-position">
+                    <div class="value-display">100%</div>
+                    <button class="remove-stop">×</button>
+                </div>
+            `;
+            
+            document.querySelectorAll('.gradient-stop').forEach(stop => {
+                setupGradientStopEvents(stop);
+            });
+            
+            // Dot settings
+            document.getElementById('enableDots').checked = true;
+            document.getElementById('dotSize').value = 2;
+            document.getElementById('dotSizeValue').textContent = '2';
+            document.getElementById('dotSpacing').value = 40;
+            document.getElementById('dotSpacingValue').textContent = '40';
+            document.getElementById('dotColor').value = '#ffffff';
+            document.getElementById('dotOpacity').value = 0.5;
+            document.getElementById('dotOpacityValue').textContent = '0.5';
+            document.getElementById('dotAnimation').value = 'pulse';
+            
+            // String settings
+            document.getElementById('enableStrings').checked = true;
+            document.getElementById('stringMaxDistance').value = 120;
+            document.getElementById('stringMaxDistanceValue').textContent = '120';
+            document.getElementById('stringColor').value = '#4444ff';
+            document.getElementById('stringWidth').value = 1;
+            document.getElementById('stringWidthValue').textContent = '1';
+            document.getElementById('stringOpacity').value = 0.3;
+            document.getElementById('stringOpacityValue').textContent = '0.3';
+            
+            // Particle settings
+            document.getElementById('enableParticles').checked = false;
+            document.getElementById('particleCount').value = 20;
+            document.getElementById('particleCountValue').textContent = '20';
+            document.getElementById('particleSize').value = 3;
+            document.getElementById('particleSizeValue').textContent = '3';
+            document.getElementById('particleColor').value = '#ffffff';
+            document.getElementById('particleOpacity').value = 0.7;
+            document.getElementById('particleOpacityValue').textContent = '0.7';
+            document.getElementById('particleSpeed').value = 1;
+            document.getElementById('particleSpeedValue').textContent = '1';
+            
+            // Animation speed
+            document.getElementById('animationSpeed').value = 1;
+            document.getElementById('animationSpeedValue').textContent = '1';
+            animationSpeed = 1;
+            
+            // Aspect ratio (16:9)
+            document.querySelectorAll('.aspect-ratio-button').forEach(b => b.classList.remove('active'));
+            document.querySelector('.aspect-ratio-button[data-width="1920"]').classList.add('active');
+            width = 1920;
+            height = 1080;
+            
+            // Trigger UI updates
+            const bgTypeEvent = new Event('change');
+            document.getElementById('bgType').dispatchEvent(bgTypeEvent);
+            
+            // Reinitialize
+            updateCanvasSize();
+            initDots();
+            initParticles();
+        }
+        
+        // Video recording functions
+        function toggleRecording() {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+        
+        function startRecording() {
+            const recordButton = document.getElementById('recordButton');
+            recordButton.textContent = 'Stop Recording';
+            recordButton.classList.add('recording');
+            
+            // Reset animation time to ensure a clean loop
+            currentTime = 0;
+            
+            // Create a stream from the canvas
+            const stream = canvas.captureStream(60);
+            
+            // Create media recorder
+            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+            
+            // Store recorded chunks
+            mediaRecorder.ondataavailable = function(e) {
+                recordedChunks.push(e.data);
+            };
+            
+            // When recording stops
+            mediaRecorder.onstop = function() {
+                // Create video blob
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                
+                // Create download link
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                document.body.appendChild(a);
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'stream-background.webm';
+                a.click();
+                
+                // Clean up
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }, 100);
+                
+                recordedChunks = [];
+                recordButton.textContent = 'Record (5s)';
+                recordButton.classList.remove('recording');
+            };
+            
+            // Start recording
+            mediaRecorder.start();
+            isRecording = true;
+            
+            // Stop after one full loop
+            setTimeout(() => {
+                if (isRecording) {
+                    stopRecording();
+                }
+            }, loopDuration * 1000 / animationSpeed);
+        }
+        
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+                isRecording = false;
+            }
+        }
+        
+        // Export as MP4 (this is a simplified version that actually creates a WebM)
+        function exportVideo() {
+            // Reset animation time to ensure a clean loop
+            currentTime = 0;
+            
+            // Let the user know we're starting
+            const exportButton = document.getElementById('exportButton');
+            const originalText = exportButton.textContent;
+            exportButton.textContent = 'Preparing...';
+            exportButton.disabled = true;
+            
+            // Use setTimeout to allow the UI to update
+            setTimeout(() => {
+                // Create a stream from the canvas
+                const stream = canvas.captureStream(60);
+                
+                // Create media recorder with higher quality
+                const mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'video/webm; codecs=vp9',
+                    videoBitsPerSecond: 5000000
+                });
+                
+                const recordedChunks = [];
+                
+                // Store recorded chunks
+                mediaRecorder.ondataavailable = function(e) {
+                    recordedChunks.push(e.data);
+                };
+                
+                // When recording stops
+                mediaRecorder.onstop = function() {
+                    // Create video blob
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    
+                    // Create download link
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    document.body.appendChild(a);
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'stream-background-hq.webm';
+                    a.click();
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }, 100);
+                    
+                    // Reset button
+                    exportButton.textContent = originalText;
+                    exportButton.disabled = false;
+                };
+                
+                // Start recording
+                mediaRecorder.start();
+                
+                // Stop after one full loop
+                setTimeout(() => {
+                    mediaRecorder.stop();
+                }, loopDuration * 1000 / animationSpeed);
+            }, 100);
+        }
+        
+        // Initialize everything when the page loads
+        window.onload = function() {
+            // Initialize UI
+            setupUIEvents();
+            
+            // Initialize canvas and start animation
+            initCanvas();
+        };
+    </script>
+</body>
+</html>
