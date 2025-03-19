@@ -2,16 +2,6 @@
 
 An Electron-based application for creating beautiful, animated backgrounds for streaming and virtual meetings. Generate dynamic backgrounds with customizable dots, strings, particles, and gradients.
 
-![Stream Background Generator Screenshot](docs/screenshot.png)
-
-## 🤖 AI-Powered Development
-
-This application was developed entirely using AI assistance (Claude 3.5 Sonnet) through pair programming. The AI helped with:
-- Application architecture and design
-- Code implementation
-- Bug fixes and optimizations
-- Documentation
-
 ## ✨ Features
 
 - Real-time animated backgrounds
@@ -101,9 +91,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 🙏 Acknowledgments
-
-- Developed with AI assistance (Claude 3.5 Sonnet)
-- Built with Electron and modern web technologies
-- Inspired by the streaming community's needs 
