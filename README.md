@@ -16,7 +16,7 @@ A web-based tool for generating beautiful animated backgrounds with dot grids, s
 
 ## Live Demo
 
-Visit [GitHub Pages URL] to try the generator live.
+Visit [https://cartcodes.github.io/background-generator/](https://cartcodes.github.io/background-generator/) to try the generator live.
 
 ## Usage
 
@@ -30,7 +30,7 @@ Visit [GitHub Pages URL] to try the generator live.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/stream-background-generator.git
+git clone https://github.com/cartcodes/background-generator.git
 ```
 
 2. Open `dot.html` in your web browser
